@@ -20,7 +20,7 @@ parser.add_argument('-a', '--allele', type=str, required=False, help='Input an a
 
 args = parser.parse_args()
 item = int(args.input)
-readic = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A'}
+readic = {'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', '[': ']', ']': '['}
 aad = {'G': 'Gly', 'A': 'Ala', 'V': 'Val', 'L': 'Leu', 'I': 'Ile', 'F': 'Phe', 'W': 'Trp', 'Y': 'Tyr', 'D': 'Asp',
        'N': 'Asn', 'E': 'Glu', 'K': 'Lys', 'Q': 'Gln', 'M': 'Met', 'S': 'Ser', 'T': 'Thr', 'C': 'Cys', 'P': 'Pro',
        'H': 'His', 'R': 'Arg', '*': 'Stop'}
@@ -41,17 +41,17 @@ for record in SeqIO.parse(gbk, 'genbank'):
     else:
         for feature in record.features:
             if (item in feature.location) and (feature.type == 'CDS') and ('gene' in feature.qualifiers):
-                if (args.allele is not None) and (args.allele == str(record.seq[item - 1])):
+                if (args.allele is not None) and (args.allele != str(record.seq[item - 1])):
                     new = args.allele
                     if feature.location.strand == 1:
                         ntpos = int(item) - feature.location.start
                         aapos = (ntpos + 2) / 3
                         copos = str(record.seq[(feature.location.start + aapos * 3 - 3): (item - 1)]) + '[' + str(
                             record.seq[(item - 1): item]) + ']' + str(
-                            record.seq[item: (feature.location.end - aapos * 3 + 3)])
+                            record.seq[item: (feature.location.start + aapos * 3)])
                         n_copos = str(
                             record.seq[(feature.location.start + aapos * 3 - 3): (item - 1)]) + '[' + new + ']' + str(
-                            record.seq[item: (feature.location.end - aapos * 3 + 3)])
+                            record.seq[item: (feature.location.start + aapos * 3)])
                     else:
                         ntpos = feature.location.end + 1 - item
                         aapos = (ntpos + 2) / 3
@@ -112,7 +112,7 @@ for record in SeqIO.parse(gbk, 'genbank'):
                     ntpos = item - feature.location.start
                 else:
                     ntpos = feature.location.end + 1 - item
-                if (args.allele is not None) and (args.allele == str(record.seq[item - 1])):
+                if (args.allele is not None) and (args.allele != str(record.seq[item - 1])):
                     outfh = str(item) + '\t' + str(
                         record.seq[item - 1]) + '->' + args.allele + '\t' + feature.type + '\t' + str(
                         ntpos) + '/' + str(len(feature.extract(record.seq))) + 'nt\t' + feature.qualifiers['gene'][
@@ -146,9 +146,9 @@ for record in SeqIO.parse(gbk, 'genbank'):
             elif (int(item) < feature.location.start) and (item < feature.location.end) and (
                     feature.type not in ['source', 'gene', 'misc_feature']) and ('gene' in feature.qualifiers):
                 if not out_w:
-                    if (args.allele is not None) and (args.allele == str(record.seq[item - 1])):
-                        outfh = str(item) + '\t' + str(record.seq[item - 1]) + '->' + new + '\t' + out_be[2] + str(
-                            out_be[1]) + '/'
+                    if (args.allele is not None) and (args.allele != str(record.seq[item - 1])):
+                        outfh = str(item) + '\t' + str(record.seq[item - 1]) + '->' + args.allele + '\t' + out_be[
+                            2] + str(out_be[1]) + '/'
                     else:
                         outfh = str(item) + '\t' + str(record.seq[item - 1]) + '\t-\t' + out_be[2] + str(out_be[
                             1]) + '/'
